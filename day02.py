@@ -28,8 +28,21 @@ def value_of_pair(pair_of_moves):
     """
     opponent, player = pair_of_moves
     value_of_shape = player + 1
-    value_of_match = 3 * (2 - (opponent - player + 1) % 3)
+    malus = (draw_lost_won(pair_of_moves) + 1) % 3 # won->0, draw->1, loss->2
+    value_of_match = 3 * (2 - malus)
     return value_of_shape + value_of_match
+
+
+def draw_lost_won(pair_of_moves):
+    """
+    Gibt
+    0 bei draw
+    1 bei loss
+    2 bei win
+    zurück
+    """
+    opponent, player = pair_of_moves
+    return (opponent - player + 3) % 3
 
 
 def calculated_player_move(pair_with_strategy):

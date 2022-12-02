@@ -2,6 +2,7 @@ from day02 import solve
 
 
 def test_solve():
-    puzzle = []
-    assert solve(puzzle) is None
+    pairs = [('A', 'Y'), ('B', 'X'), ('C', 'Z')]
+    puzzle = list(map(lambda pair: (ord(pair[0]) - ord('A'), ord(pair[1]) - ord('X')), pairs))
+    assert solve(puzzle) == 12
 

@@ -8,7 +8,7 @@ def read_puzzle(filename):
 
 # Idee für den funktionalen Ansatz:
 # Die ursprüngliche Liste wird reduziert auf eine Liste mit den Summen
-# Dazu wird ein Tupel (current, list) als value durchgereicht, das den aktuellen Summenstand und die bisherige
+# Dazu wird ein Tupel (current, board) als value durchgereicht, das den aktuellen Summenstand und die bisherige
 # Summenliste enthält. Je nach Inhalt des aktuellen Elements wird entweder der Summenstand erhöht
 # oder das Ergebnis zur Summenliste hinzugefügt.
 
@@ -21,6 +21,7 @@ def solve(puzzle):
     return sum(board[-3:])
 
 
-puzzle = read_puzzle("data/Tag_01.txt")
-start = pfc()
-print(solve(puzzle), pfc()-start)
+if __name__ == '__main__':
+    puzzle = read_puzzle("data/day1.txt")
+    start = pfc()
+    print(solve(puzzle), pfc()-start)

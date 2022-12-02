@@ -6,9 +6,10 @@ def read_puzzle(filename):
 
 
 def solve(puzzle):
-    pass
+    return None
 
 
-puzzle = read_puzzle("data/Tag_01.txt")
-start = pfc()
-print(solve(puzzle), pfc()-start)
+if __name__ == '__main__':
+    puzzle = read_puzzle("data/day1.txt")
+    start = pfc()
+    print(solve(puzzle), pfc()-start)

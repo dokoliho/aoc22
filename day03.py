@@ -13,7 +13,7 @@ def convert_to_priority_lists(puzzle):
     Zerlegen der Strings in Listen von Charakters (äußere map)
     Überführen der Charakter in Prioritäten (innere map)
     """
-    return list(map(lambda it1: list(map(lambda it2: priority(it2), list(it1.strip()))), puzzle))
+    return list(map(lambda it1: list(map(lambda it2: priority(it2), it1.strip())), puzzle))
 
 
 def priority(item):
@@ -31,7 +31,7 @@ def solve1(puzzle):
     Lösung Teil eins: Aufsummeren der Prioritäten der doppelten Elemente in den beiden
     Abteilungen des Rucksacks
     """
-    return sum(list(map(find_common_item_in_rucksack, puzzle)))
+    return sum(map(find_common_item_in_rucksack, puzzle))
 
 
 def find_common_item_in_rucksack(rucksack):

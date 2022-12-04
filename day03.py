@@ -13,7 +13,7 @@ def convert_to_priority_lists(puzzle):
     Zerlegen der Strings in Listen von Charakters (äußere map)
     Überführen der Charakter in Prioritäten (innere map)
     """
-    return list(map(lambda it1: list(map(lambda it2: priority(it2), it1.strip())), puzzle))
+    return list(map(lambda line: list(map(priority, line.strip())), puzzle))
 
 
 def priority(item):

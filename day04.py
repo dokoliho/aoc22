@@ -10,14 +10,14 @@ def convert_to_tuples(lines):
     """
     ["2-4,6-8\n", "2-3,4-5\n"] -> [ [(2, 4), (6, 8)], [(2, 3), (4, 5)] ]
     """
-    return list(map(lambda it1: list(map(lambda it2: convert_to_tuple(it2), it1.strip().split(","))), lines))
+    return list(map(lambda line: list(map(convert_to_tuple, line.strip().split(","))), lines))
 
 
 def convert_to_tuple(line):
     """
     "1-2" -> (1,2)
     """
-    return tuple(map(lambda it: int(it), line.split("-")))
+    return tuple(map(int, line.split("-")))
 
 
 def is_containing(tuple1, tuple2):

@@ -1,6 +1,6 @@
-from functools import reduce
+
 from time import perf_counter as pfc
-import re
+
 
 
 def read_puzzle(filename):

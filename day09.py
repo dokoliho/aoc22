@@ -9,6 +9,8 @@ def read_puzzle(filename: str) -> List[str]:
 
 def solve01(lines: List[str]) -> int:
     """
+    Ermitteln der Anzahl der Endepositionen
+    Das Seil besteht nur aus Head und Tail
     """
     head = (0,0)
     tail = (0,0)
@@ -22,6 +24,8 @@ def solve01(lines: List[str]) -> int:
 
 def solve02(lines: List[str]) -> int:
     """
+    Ermitteln der Anzahl der Endepositionen
+    Das Seil besteht nur aus 10 Knoten, die gem. Regel aufeinander folgen
     """
     snake = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
     movements = convert(lines)
@@ -33,48 +37,65 @@ def solve02(lines: List[str]) -> int:
 
 
 def convert(lines: List[str]):
-    tuples =  map(lambda l: tuple(l.strip().split()), lines)
+    """
+    ['R 4\n', 'U 4\n', 'L 3\n', 'D 1\n', 'R 4\n', 'D 1\n', 'L 5\n', 'R 2\n'] ->
+    [('R', 4), ('U', 4), ('L', 3), ('D', 1), ('R', 4), ('D', 1), ('L', 5), ('R', 2)]
+    """
+    tuples = map(lambda l: tuple(l.strip().split()), lines)
     return list(map(lambda tup: (tup[0], int(tup[1])), tuples))
 
 
 def new_tail_after_close_gap(head, tail):
+    """
+    Implementierung der Nachfolgelogik
+    Bewegung nur, wenn nicht zusammenstehend
+    Bewegung aber in jede abweichende Dimension (d.h. auch diagonal)
+    """
     if are_close(head, tail):
         return tail
-    dx = 0
-    dy = 0
     if abs(head[0]-tail[0]) > 0:
-        dx = 1 if head[0] > tail[0] else -1
+        tail = tail[0] + (1 if head[0] > tail[0] else -1), tail[1]
     if abs(head[1]-tail[1]) > 0:
-        dy = 1 if head[1] > tail[1] else -1
-    return tail[0]+dx, tail[1]+dy
+        tail = tail[0], tail[1] + (1 if head[1] > tail[1] else -1)
+    return tail
 
 
 def are_close(head, tail):
+    """
+    Test auf zusammenstehend
+    """
     return abs(head[0]-tail[0]) <= 1 and abs(head[1]-tail[1]) <= 1
 
 
 def tail_positions_after_movement(head, tail, direction, count):
-    result = [tail]
-    for _ in range(count):
-        head = move_one_step(head, direction)
-        tail = new_tail_after_close_gap(head, tail)
-        result.append(tail)
-    return result, head, tail
+    """
+    Durchführung einer Bewegungsfolge eine Seils mit Head und Tail
+    Rückgabe der besuchten Positionen des Endes
+    """
+    snake = [head, tail]
+    positions, snake =  tail_positions_after_snake_movement(snake, direction, count)
+    return positions, snake[0], snake[1]
 
 
 def tail_positions_after_snake_movement(snake, direction, count):
-    result = [snake[-1]]
+    """
+    Durchführung einer Bewegungsfolge eine Seils beliebig vielen Knoten
+    Rückgabe der besuchten Positionen des Endes
+    """
+    positions = [snake[-1]]
     for _ in range(count):
         head = snake[0]
         snake[0] = move_one_step(head, direction)
         for i in range(len(snake)-1):
             snake[i+1] = new_tail_after_close_gap(snake[i], snake[i+1])
-        result.append(snake[-1])
-    return result, snake
-
+        positions.append(snake[-1])
+    return positions, snake
 
 
 def move_one_step(start, direction):
+    """
+    Durchführung eines Einzelschritts
+    """
     match direction:
         case 'R':
             return start[0] + 1, start[1]

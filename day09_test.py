@@ -14,6 +14,19 @@ def data() -> List[str]:
         "R 2\n",
     ]
 
+def data2() -> List[str]:
+    return [
+        "R 5\n",
+        "U 8\n",
+        "L 8\n",
+        "D 3\n",
+        "R 17\n",
+        "D 10\n",
+        "L 25\n",
+        "U 20\n",
+    ]
+
+
 def test_convert():
     lines = data()
     result = convert(lines)
@@ -69,4 +82,7 @@ def test_solve1():
 def test_solve2():
     lines: List[str] = data()
     result: int = solve02(lines)
-    assert result == 0
+    assert result == 1
+    lines = data2()
+    result: int = solve02(lines)
+    assert result == 36

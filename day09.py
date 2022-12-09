@@ -84,8 +84,7 @@ def tail_positions_after_snake_movement(snake, direction, count):
     """
     positions = [snake[-1]]
     for _ in range(count):
-        head = snake[0]
-        snake[0] = move_one_step(head, direction)
+        snake[0] = move_one_step(snake[0], direction)
         for i in range(len(snake)-1):
             snake[i+1] = new_tail_after_close_gap(snake[i], snake[i+1])
         positions.append(snake[-1])

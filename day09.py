@@ -27,7 +27,7 @@ def solve02(lines: List[str]) -> int:
     Ermitteln der Anzahl der Endepositionen
     Das Seil besteht nur aus 10 Knoten, die gem. Regel aufeinander folgen
     """
-    rope = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+    rope = [(0, 0) for _ in range(10)]
     movements = convert(lines)
     tail_positions = []
     for movement in movements:
@@ -51,12 +51,11 @@ def new_tail_after_close_gap(head, tail):
     Bewegung nur, wenn nicht zusammenstehend
     Bewegung aber in jede abweichende Dimension (d.h. auch diagonal)
     """
-    if are_close(head, tail):
-        return tail
-    if abs(head[0]-tail[0]) > 0:
-        tail = tail[0] + (1 if head[0] > tail[0] else -1), tail[1]
-    if abs(head[1]-tail[1]) > 0:
-        tail = tail[0], tail[1] + (1 if head[1] > tail[1] else -1)
+    if not(are_close(head, tail)):
+        if abs(head[0]-tail[0]) > 0:
+            tail = tail[0] + (1 if head[0] > tail[0] else -1), tail[1]
+        if abs(head[1]-tail[1]) > 0:
+            tail = tail[0], tail[1] + (1 if head[1] > tail[1] else -1)
     return tail
 
 

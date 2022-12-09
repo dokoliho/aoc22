@@ -1,5 +1,5 @@
 from typing import List
-from day09 import solve01, solve02, convert, new_tail_after_close_gap
+from day09 import solve01, solve02, convert, new_tail_after_close_gap, tail_positions_after_movement
 
 
 def data() -> List[str]:
@@ -53,10 +53,17 @@ def test_new_tail_after_close_gap():
     assert new_tail == (1, -1)
 
 
+def test_tail_positions_after_movement():
+    head = (0, 0)
+    tail = (0, 0)
+    result, _, _ = tail_positions_after_movement(head, tail, 'R', 3)
+    assert result == [(0,0), (0,0), (1,0), (2,0)]
+
+
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-    assert result == 0
+    assert result == 13
 
 
 def test_solve2():

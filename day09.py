@@ -10,13 +10,26 @@ def read_puzzle(filename: str) -> List[str]:
 def solve01(lines: List[str]) -> int:
     """
     """
-    return 0
+    head = (0,0)
+    tail = (0,0)
+    movements = convert(lines)
+    tail_positions = []
+    for movement in movements:
+        new_positions, head, tail = tail_positions_after_movement(head, tail, movement[0], movement[1])
+        tail_positions = tail_positions + new_positions
+    return len(set(tail_positions))
 
 
 def solve02(lines: List[str]) -> int:
     """
     """
-    return 0
+    snake = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+    movements = convert(lines)
+    tail_positions = []
+    for movement in movements:
+        new_positions, snake = tail_positions_after_snake_movement(snake, movement[0], movement[1])
+        tail_positions = tail_positions + new_positions
+    return len(set(tail_positions))
 
 
 def convert(lines: List[str]):
@@ -38,6 +51,27 @@ def new_tail_after_close_gap(head, tail):
 
 def are_close(head, tail):
     return abs(head[0]-tail[0]) <= 1 and abs(head[1]-tail[1]) <= 1
+
+
+def tail_positions_after_movement(head, tail, direction, count):
+    result = [tail]
+    for _ in range(count):
+        head = move_one_step(head, direction)
+        tail = new_tail_after_close_gap(head, tail)
+        result.append(tail)
+    return result, head, tail
+
+
+def tail_positions_after_snake_movement(snake, direction, count):
+    result = [snake[-1]]
+    for _ in range(count):
+        head = snake[0]
+        snake[0] = move_one_step(head, direction)
+        for i in range(len(snake)-1):
+            snake[i+1] = new_tail_after_close_gap(snake[i], snake[i+1])
+        result.append(snake[-1])
+    return result, snake
+
 
 
 def move_one_step(start, direction):

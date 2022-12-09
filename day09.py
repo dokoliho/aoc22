@@ -27,11 +27,11 @@ def solve02(lines: List[str]) -> int:
     Ermitteln der Anzahl der Endepositionen
     Das Seil besteht nur aus 10 Knoten, die gem. Regel aufeinander folgen
     """
-    snake = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+    rope = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
     movements = convert(lines)
     tail_positions = []
     for movement in movements:
-        new_positions, snake = tail_positions_after_snake_movement(snake, movement[0], movement[1])
+        new_positions, rope = tail_positions_after_rope_movement(rope, movement[0], movement[1])
         tail_positions = tail_positions + new_positions
     return len(set(tail_positions))
 
@@ -72,23 +72,23 @@ def tail_positions_after_movement(head, tail, direction, count):
     Durchführung einer Bewegungsfolge eine Seils mit Head und Tail
     Rückgabe der besuchten Positionen des Endes
     """
-    snake = [head, tail]
-    positions, snake =  tail_positions_after_snake_movement(snake, direction, count)
-    return positions, snake[0], snake[1]
+    rope = [head, tail]
+    positions, rope =  tail_positions_after_rope_movement(rope, direction, count)
+    return positions, rope[0], rope[1]
 
 
-def tail_positions_after_snake_movement(snake, direction, count):
+def tail_positions_after_rope_movement(rope, direction, count):
     """
     Durchführung einer Bewegungsfolge eine Seils beliebig vielen Knoten
     Rückgabe der besuchten Positionen des Endes
     """
-    positions = [snake[-1]]
+    positions = [rope[-1]]
     for _ in range(count):
-        snake[0] = move_one_step(snake[0], direction)
-        for i in range(len(snake)-1):
-            snake[i+1] = new_tail_after_close_gap(snake[i], snake[i+1])
-        positions.append(snake[-1])
-    return positions, snake
+        rope[0] = move_one_step(rope[0], direction)
+        for i in range(len(rope) - 1):
+            rope[i + 1] = new_tail_after_close_gap(rope[i], rope[i + 1])
+        positions.append(rope[-1])
+    return positions, rope
 
 
 def move_one_step(position, direction):

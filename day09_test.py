@@ -1,5 +1,5 @@
 from typing import List
-from day09 import solve01, solve02, convert
+from day09 import solve01, solve02, convert, new_tail_after_close_gap
 
 
 def data() -> List[str]:
@@ -19,6 +19,38 @@ def test_convert():
     result = convert(lines)
     assert result[0] == ('R', 4)
     assert len(result) == 8
+
+
+def test_new_tail_after_close_gap():
+    head = (0,0)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (0, 0)
+
+    head = (0,1)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (0, 0)
+
+    head = (0,2)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (0, 1)
+
+    head = (-2,0)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (-1, 0)
+
+    head = (1,-1)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (0, 0)
+
+    head = (1,-2)
+    tail = (0,0)
+    new_tail = new_tail_after_close_gap(head, tail)
+    assert new_tail == (1, -1)
 
 
 def test_solve1():

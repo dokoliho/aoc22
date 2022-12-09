@@ -91,20 +91,20 @@ def tail_positions_after_snake_movement(snake, direction, count):
     return positions, snake
 
 
-def move_one_step(start, direction):
+def move_one_step(position, direction):
     """
     Durchführung eines Einzelschritts
     """
     match direction:
         case 'R':
-            return start[0] + 1, start[1]
+            return position[0] + 1, position[1]
         case 'L':
-            return start[0] - 1, start[1]
+            return position[0] - 1, position[1]
         case 'U':
-            return start[0], start[1] - 1
+            return position[0], position[1] - 1
         case 'D':
-            return start[0] , start[1] + 1
-    return start
+            return position[0] , position[1] + 1
+    return position
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 from typing import List
-from day11 import solve01, solve02, convert, Monkey
+from day11 import solve01, solve02, convert, do_monkey_business_round, UpsetMonkey
 
 
 def data() -> List[str]:
@@ -64,14 +64,38 @@ def test_do_business():
     assert monkeys[3].items == [74, 500, 620]
 
 
+def test_do_business_round():
+    lines = data()
+    monkeys = convert(lines)
+    do_monkey_business_round(monkeys)
+    assert monkeys[0].items == [20, 23, 27, 26]
+    assert monkeys[1].items == [2080, 25, 167, 207, 401, 1046]
+    assert monkeys[2].items == []
+    assert monkeys[3].items == []
+    do_monkey_business_round(monkeys)
+    assert monkeys[0].items == [695, 10, 71, 135, 350]
+    assert monkeys[1].items == [43, 49, 58, 55, 362]
+    assert monkeys[2].items == []
+    assert monkeys[3].items == []
+
+
+def test_do_business_round2():
+    lines = data()
+    monkeys = convert(lines, UpsetMonkey)
+    do_monkey_business_round(monkeys)
+    assert monkeys[0].count == 2
+    assert monkeys[1].count == 4
+    assert monkeys[2].count == 3
+    assert monkeys[3].count == 6
+
 
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-    assert result == 0
+    assert result == 10605
 
 
 def test_solve2():
     lines: List[str] = data()
     result: int = solve02(lines)
-    assert result == 0
+    assert result == 2713310158

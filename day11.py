@@ -104,6 +104,8 @@ class UpsetMonkey(Monkey):
     ansteigen würden (und damit die Laufzeit). Die Idee ist, die Level durch eine
     Modulo-Rechnung zu begrenzen, ohne dass die Resteprüfungen davon beeinflusst werden.
     Lösung: wir rechnen im Modul des Produkts aller Divisoren für die Resteprüfung
+    Noch besser wäre das KGV aller Divisoren, aber da die Divisoren in den Beispielen
+    immer prim sind, ist das Produkt das KGV
     """
 
     divisors = []       # Klassenvariable, in der alle Divisoren gesammelt werden

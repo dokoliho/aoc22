@@ -21,14 +21,14 @@ def solve01(lines: List[str]) -> int:
 def solve02(lines: List[str]) -> int:
     """
     Ermitteln des kürzesten Pfades aus der Menge aller Knoten mit Höhe 0 zum Knoten E
+    Dies ist erstaunlicherweise schneller als solve01, weil nicht in aussichtslosen Löchern gesucht
+    werden muss (die Verbindungen sind bei der Gegenrichtung reversibel, d.h. wohin ich absteigen kann,
+    da komme ich auch wieder raus).
     """
     matrix = convert_to_height_matrix(lines)
-    edges = create_edges(matrix)
-    min_steps = math.inf
-    for source_node in starting_nodes(matrix):
-        reset_all_costs(matrix)
-        min_steps = min(dijkstra(source_node, Node.destination_node, edges, min_steps), min_steps)
-    return min_steps
+    edges = revert_edges(create_edges(matrix))
+    dijkstra(Node.destination_node, Node.source_node, edges)
+    return min(map(lambda n: n.cost, starting_nodes(matrix)))
 
 
 def convert_to_height_matrix(lines):
@@ -143,11 +143,16 @@ def create_edges(matrix):
     return edges
 
 
-def dijkstra(source: Node, destination: Node, edges: List[Edge], upper_bound=math.inf):
+def revert_edges(edges: List[Edge]):
+    """
+    "Umdrehen" aller Kanten für die Suche vom Endpunkt zu möglichen Startpunkten
+    """
+    return list(map(lambda e: Edge(e.destination, e.source), edges))
+
+
+def dijkstra(source: Node, destination: Node, edges: List[Edge]):
     """
     Dijkstra-Algorithmus zum Ermitteln des kürzesten Pfades von source zu destination
-    Da im zweiten Schritt der Algorithmus mehrfach durchgeführt wird, kann über einen
-    optionalen Parameter eine max. Schrittzahl angegeben werden
     """
     source.cost = 0
     border = [source]
@@ -156,8 +161,6 @@ def dijkstra(source: Node, destination: Node, edges: List[Edge], upper_bound=mat
         if len(border) == 0:
             break
         node = border.pop(0)
-        if node.cost >= upper_bound:
-            break
         for edge in edges:
             if edge.source == node:
                 if edge.destination.cost > edge.source.cost + 1:

@@ -156,17 +156,22 @@ def dijkstra(source: Node, destination: Node, edges: List[Edge]):
     """
     source.cost = 0
     border = [source]
-    while destination not in border:
+    while destination not in border and len(border) > 0:
         border = sorted(border, key=lambda n: n.cost)
-        if len(border) == 0:
-            break
         node = border.pop(0)
-        for edge in edges:
-            if edge.source == node:
-                if edge.destination.cost > edge.source.cost + 1:
-                    edge.destination.cost = edge.source.cost + 1
-                    border.append(edge.destination)
+        new_cost = node.cost + 1
+        for edge in outgoing_edges(edges, node):
+            if edge.destination.cost > new_cost:
+                edge.destination.cost = new_cost
+                border.append(edge.destination)
     return destination.cost
+
+
+def outgoing_edges(edges, source):
+    """
+    Alle Kanten, die einen Knoten verlassen
+    """
+    return filter(lambda e: e.source == source, edges)
 
 
 def starting_nodes(matrix):

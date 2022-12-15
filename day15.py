@@ -43,8 +43,21 @@ def len_interval_without_beacons(sensors, interval, line):
 def solve02(lines: List[str]) -> int:
     """
     """
+    sensors = convert_to_sensor_map(lines)
+    max_dim = 4000000
+    for y in range(0, max_dim+1):
+        list_of_intervals = covered_intervals_in_line(sensors, y)
+        list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
+        list_of_intervals = join_intervals(list_of_intervals, [])
+        line_possible = True
+        for interval in list_of_intervals:
+            if interval[0] <= 0 and interval[1] >=0:
+                if interval[1] >= max_dim:
+                    line_possible = False
+                    break
+        if line_possible:
+            print(y)
     return 0
-
 
 def convert_to_sensor_map(lines: List[str]):
     return list(map(lambda line: convert_line_to_tuple(line.strip()), lines))
@@ -124,6 +137,20 @@ def simplify_intervals(intervals, simplified):
             return simplify_intervals(intervals, new_simplified)
     simplified.append(new_interval)
     return simplify_intervals(intervals, simplified)
+
+
+def join_intervals(intervals, joined):
+    if len(intervals) == 0:
+        return joined
+    new_interval = intervals.pop(0)
+    if len(joined) == 0:
+        return join_intervals(intervals, [new_interval])
+    if joined[-1][1]+1 == new_interval[0]:
+        new_joined = joined[:-2]
+        new_joined.append((joined[-1], new_interval[1]))
+        return join_intervals(intervals, joined)
+    joined.append(new_interval)
+    return join_intervals(intervals, joined)
 
 
 if __name__ == '__main__':

@@ -9,50 +9,163 @@ def read_puzzle(filename: str) -> List[str]:
         return [x for x in f]
 
 
-def solve01(lines: List[str]) -> int:
+def solve01(lines: List[str], row: int) -> int:
     """
+    Ermitteln der Anzahl der garantiert Beacon-freien Plätze in einer Zeile
     """
-    sensors = convert_to_sensor_map(lines)
-    list_of_intervals = covered_intervals_in_line(sensors, 2000000)
-    return len_of_intervals_without_beacons(sensors, list_of_intervals, 2000000)
+    sensors = convert_to_sensors(lines)
+    intervals = disjunct_cover_intervals_in_line(sensors, row)
+    return len_of_intervals(intervals) - count_beacons_in_row(sensors, row)
+
+
+X_SENSOR = 0
+Y_SENSOR = 1
+X_NEXT_BEACON = 2
+Y_NEXT_BEACON = 3
+
+def convert_to_sensors(lines: List[str]):
+    """
+    Umwandeln des Inputs in eine Liste von 4-er Tupeln mit dem Aufbau
+    (x_sensor, y_sensor, x_next_beacon, y_next_beacon)
+    """
+    return list(map(lambda line: convert_line_to_tuple(line.strip()), lines))
+
+
+def convert_line_to_tuple(line):
+    """
+    Konvertieren einer einzelnen Input-Zeile in ein Tupel
+    """
+    m = re.search(r"Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$", line)
+    return tuple(map(int, m.groups()))
+
+
+def disjunct_cover_intervals_in_line(sensors, line):
+    """
+    Rückgabe einer disjunkten Liste von Intervallen, in denen auf Basis der übergebenen Sensoren keine
+    unentdeckten Beacons sein können (entdeckte schon)
+    """
+    sensors = covering_sensors(sensors, line)
+    intervals = []
+    for sensor in sensors:
+        intervals.append(covered_interval_in_line_by_one_sensor(sensor, line))
+    return reduced(intervals)
+
+
+def reduced(intervals):
+    """
+    Wiederholtes Durchlaufen der Liste der Intervalle mit Zusammenführen überlappender Intervalle
+    Die Rekursion bricht ab, wenn bei einem Durchlauf keine Zusammenführungen (mehr) passiert sind
+    """
+    len_before_merge = len(intervals)
+    intervals = merge_intervals(intervals, [])
+    if len_before_merge == len(intervals):
+        return intervals
+    return reduced(intervals)
+
+
+def merge_intervals(intervals, merged_intervals):
+    """
+    Rekursives Zusammenführen überlappender Intervalle
+    Die Intervalle aus intervals werden sukzessive nach merged_intervals übernommen und dabei
+    ggf. mit einem dort bereits vorhandenen Intervall verschmolzen
+    """
+    if len(intervals) == 0:
+        # Abbruch der Rekursion
+        return merged_intervals
+    new_interval = intervals.pop(0)
+    for interval in merged_intervals:
+        if interval[0] <= new_interval[0] and interval[1] >= new_interval[1]:
+            # neues Intervall komplett in einem bestehenden Interval enthalten
+            return merge_intervals(intervals, merged_intervals)
+        if interval[0] >= new_interval[0] and interval[1] <= new_interval[1]:
+            # bestehendes Intervall komplett im neuen Interval enthalten
+            new_merged = [i for i in merged_intervals if not i == interval]
+            new_merged.append((new_interval[0], new_interval[1]))
+            return merge_intervals(intervals, new_merged)
+        if interval[0] <= new_interval[0] <= interval[1]:
+            # neues Intervall beginnt in einem bestehenden
+            new_merged = [i for i in merged_intervals if not i == interval]
+            new_merged.append((interval[0], new_interval[1]))
+            return merge_intervals(intervals, new_merged)
+        if interval[0] <= new_interval[1] <= interval[1]:
+            # neues Intervall endet in einem bestehenden
+            new_merged = [i for i in merged_intervals if not i == interval]
+            new_merged.append((new_interval[0], interval[1]))
+            return merge_intervals(intervals, new_merged)
+    # Mit keinem Intervall wurden Überschneidungen gefunden -> neues Intervall zur Liste hinzufügen
+    merged_intervals.append(new_interval)
+    return merge_intervals(intervals, merged_intervals)
+
+
+def covering_sensors(sensors, line):
+    """
+    Ermitteln aller Sensoren, die in der gegebenen Zeile Positionen für Beacons ausschließen
+    """
+    return [sensor for sensor in sensors if is_covering(sensor, line)]
+
+
+def is_covering(sensor, line):
+    """
+    True, falls der übergebene Sensor in der übergebenen Zeile Positionen für Beacons ausschließt
+    Ist gegeben, wenn der Abstand zwischen der Sensor-Zeile und der übergebenen Zeile kleiner als
+    der Abstand zum entdeckten Beacon ist
+    """
+    return sensor[Y_SENSOR] - manhattan_distance(sensor) <= line <= sensor[Y_SENSOR] + manhattan_distance(sensor)
+
+
+def covered_interval_in_line_by_one_sensor(sensor, line):
+    """
+    Berechnung des Intervalls in einer gegebenen Zeile,
+    in dem für einen gegebenen Sensor kein Beacon sein kann
+    (bzw. nur das dem Sensor nächstgelegene)
+    """
+    y_diff = abs(sensor[Y_SENSOR] - line)
+    remaining = manhattan_distance(sensor) - y_diff
+    return sensor[X_SENSOR] - remaining, sensor[X_SENSOR] + remaining
+
+
+def count_beacons_in_row(sensors, row):
+    """
+    Ermitteln der ANzahl endeckter Beacons in einer Zeile
+    Ein Beacon kann von mehreren Sensoren entdeckt sein, daher muss eine Verdichtung vorgenommen werden
+    """
+    return len(set(map(lambda s: s[X_NEXT_BEACON], filter(lambda s: s[Y_NEXT_BEACON] == row, sensors))))
 
 
 def len_of_intervals(list_of_intervals):
+    """
+    Aufaddieren der Längen disjunkter Intervalle
+    """
     return sum(map(len_interval, list_of_intervals))
 
 
-def len_of_intervals_without_beacons(sensors, list_of_intervals, line):
-    return sum(map(lambda i: len_interval_without_beacons(sensors, i, line), list_of_intervals))
-
-
 def len_interval(interval):
+    """
+    Ermitteln der Länge eines Intervalls
+    """
     return interval[1]-interval[0]+1
 
 
-def len_interval_without_beacons(sensors, interval, line):
-    raw = len_interval(interval)
-    beacons_in_interval = set()
-    for sensor in sensors:
-        if sensor[3] == line:
-            if interval[0] <= sensor[2] <= interval[1]:
-                beacons_in_interval.add(sensor[2])
-    return raw - len(beacons_in_interval)
-
-
-
-def solve02(lines: List[str]) -> int:
+def solve02(lines: List[str], upper_bound) -> int:
     """
+    Ermitteln der Position eines unentdeckten Beacons
+    in den Zeilen 0 bis upper_bound
+    Berechnen der Frequenz
     """
-    sensors = convert_to_sensor_map(lines)
-    x, y = get_free_position(sensors, 4000)
-    return x * y
+    sensors = convert_to_sensors(lines)
+    x, y = get_free_position(sensors, upper_bound)
+    return x * 4000000 + y
 
 
 def get_free_position(sensors, max_dim):
+    """
+    Ermitteln der einen freien Position in den Zeilen 0 bis max_dim
+    """
     for y in range(0, max_dim+1):
         intervals = joined_intervals(sensors, y)
         free = free_intervals(intervals, 0, max_dim)
         if len(free) == 0:
+            # keine freie Position -> nächste Zeile
             continue
         if len(free) == 1:
             if free[0][0] != free[0][1]:
@@ -62,84 +175,10 @@ def get_free_position(sensors, max_dim):
     return None, None
 
 
-def convert_to_sensor_map(lines: List[str]):
-    return list(map(lambda line: convert_line_to_tuple(line.strip()), lines))
-
-
-def convert_line_to_tuple(line):
-    m = re.search(r"Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$", line)
-    return tuple(map(int, m.groups()))
-
-
-def map_size(sensors):
-    x_min = math.inf
-    x_max = -math.inf
-    y_min = math.inf
-    y_max = -math.inf
-    for sensor in sensors:
-        x_min = min(x_min, sensor[0] - manhattan_distance(sensor))
-        y_min = min(y_min, sensor[1] - manhattan_distance(sensor))
-        x_max = max(x_max, sensor[0] + manhattan_distance(sensor))
-        y_max = max(y_max, sensor[1] + manhattan_distance(sensor))
-    return x_min, y_min, x_max, y_max
-
-
-def manhattan_distance(sensor):
-    return abs(sensor[0]-sensor[2]) + abs(sensor[1]-sensor[3])
-
-
-def covering_sensors(sensors, line):
-    return [sensor for sensor in sensors if is_covering(sensor, line)]
-
-
-def is_covering(sensor, line):
-    return sensor[1] - manhattan_distance(sensor) <= line <= sensor[1] + manhattan_distance(sensor)
-
-
-def cover_in_line(sensor, line):
-    lower, upper = covered_interval_in_line(sensor, line)
-    return range(lower, upper+1)
-
-
-def covered_interval_in_line(sensor, line):
-    y_diff = abs(sensor[1] - line)
-    remaining = manhattan_distance(sensor) - y_diff
-    return sensor[0] - remaining, sensor[0] + remaining
-
-
-def covered_intervals_in_line(sensors, line):
-    sensors = covering_sensors(sensors, line)
-    intervals = []
-    for sensor in sensors:
-        intervals.append(covered_interval_in_line(sensor, line))
-    while(True):
-        l = len(intervals)
-        intervals = simplify_intervals(intervals, [])
-        if len(intervals) == l: break
-    return intervals
-
-
-def simplify_intervals(intervals, simplified):
-    if len(intervals) == 0:
-        return simplified
-    new_interval = intervals.pop(0)
-    for interval in simplified:
-        if interval[0] <= new_interval[0] and interval[1] >= new_interval[1]:
-            return simplify_intervals(intervals, simplified)
-        if interval[0] >= new_interval[0] and interval[1] <= new_interval[1]:
-            new_simplified = [i for i in simplified if not i == interval]
-            new_simplified.append((new_interval[0], new_interval[1]))
-            return simplify_intervals(intervals, new_simplified)
-        if interval[0] <= new_interval[0] <= interval[1]:
-            new_simplified = [i for i in simplified if not i == interval]
-            new_simplified.append((interval[0], new_interval[1]))
-            return simplify_intervals(intervals, new_simplified)
-        if interval[0] <= new_interval[1] <= interval[1]:
-            new_simplified = [i for i in simplified if not i == interval]
-            new_simplified.append((new_interval[0], interval[1]))
-            return simplify_intervals(intervals, new_simplified)
-    simplified.append(new_interval)
-    return simplify_intervals(intervals, simplified)
+def joined_intervals(sensors, line):
+    list_of_intervals = disjunct_cover_intervals_in_line(sensors, line)
+    list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
+    return join_intervals(list_of_intervals, [])
 
 
 def join_intervals(intervals, joined):
@@ -170,10 +209,7 @@ def is_line_possible_with_intervals(list_of_intervals, max_dim):
     return line_possible
 
 
-def joined_intervals(sensors, line):
-    list_of_intervals = covered_intervals_in_line(sensors, line)
-    list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
-    return join_intervals(list_of_intervals, [])
+
 
 
 def free_intervals(sorted_intervals, lower_bound, upper_bound):
@@ -193,10 +229,17 @@ def free_intervals(sorted_intervals, lower_bound, upper_bound):
         return [(lower_bound, upper_bound)]
 
 
+def manhattan_distance(sensor):
+    """
+    Ermitteln des Manhattan-Abstands zwischen einem Sensor und dem von ihm lokalisierten Beacon
+    """
+    return abs(sensor[X_SENSOR]-sensor[X_NEXT_BEACON]) + abs(sensor[Y_SENSOR]-sensor[Y_NEXT_BEACON])
+
+
 if __name__ == '__main__':
     lines = read_puzzle("data/day15.txt")
     start = pfc()
-    print(solve01(lines), pfc()-start)
+    print(solve01(lines, 2000000), pfc()-start)
     start = pfc()
-    print(solve02(lines), pfc()-start)
+    print(solve02(lines, 4000000), pfc()-start)
 

@@ -1,5 +1,7 @@
 from typing import List
-from day15 import solve01, solve02, convert_to_sensor_map, cover_in_line, covered_intervals_in_line, len_of_intervals, len_of_intervals_without_beacons, is_line_possible, joined_intervals, free_intervals
+from day15 import solve01, solve02, convert_to_sensors, disjunct_cover_intervals_in_line
+from day15 import len_of_intervals, is_line_possible, joined_intervals, free_intervals
+from day15 import covered_interval_in_line_by_one_sensor
 
 
 def data() -> List[str]:
@@ -22,46 +24,48 @@ def data() -> List[str]:
 
 
 def test_convert():
-    result = convert_to_sensor_map(data())
+    result = convert_to_sensors(data())
     assert len(result) == 14
     assert result[0] == (2, 18, -2, 15)
 
 
 def test_cover_in_line():
-    sensors = convert_to_sensor_map(data())
-    r = cover_in_line(sensors[6], 7)
+    sensors = convert_to_sensors(data())
+    lower, upper = covered_interval_in_line_by_one_sensor(sensors[6], 7)
+    r = range(lower, upper+1)
     assert -2 not in r
     assert -1 in r
     assert 17 in r
     assert 18 not in r
-    r = cover_in_line(sensors[6], 2)
+    lower, upper = covered_interval_in_line_by_one_sensor(sensors[6], 2)
+    r = range(lower, upper+1)
     assert 3 not in r
     assert 4 in r
     assert 12 in r
     assert 13 not in r
-    r = cover_in_line(sensors[6], 16)
+    lower, upper = covered_interval_in_line_by_one_sensor(sensors[6], 16)
+    r = range(lower, upper+1)
     assert 7 not in r
     assert 8 in r
     assert 9 not in r
 
 
 def test_covered_intervals_in_line():
-    sensors = convert_to_sensor_map(data())
-    intervals = covered_intervals_in_line(sensors, 10)
+    sensors = convert_to_sensors(data())
+    intervals = disjunct_cover_intervals_in_line(sensors, 10)
     l = len_of_intervals(intervals)
     assert l == 27
-    l = len_of_intervals_without_beacons(sensors, intervals, 10)
-    assert l == 26
+
 
 
 def test_is_line_possible():
-    sensors = convert_to_sensor_map(data())
+    sensors = convert_to_sensors(data())
     assert is_line_possible(sensors, 11, 20)
     assert not is_line_possible(sensors, 10, 20)
 
 
 def test_free_intervals():
-    sensors = convert_to_sensor_map(data())
+    sensors = convert_to_sensors(data())
     intervals = joined_intervals(sensors, 11)
     free = free_intervals(intervals, 0, 20)
     assert len(free) == 1
@@ -70,10 +74,11 @@ def test_free_intervals():
 
 def test_solve1():
     lines: List[str] = data()
-    result: int = solve01(lines)
-    assert result == 0
+    result: int = solve01(lines, 10)
+    assert result == 26
+
 
 def test_solve2():
     lines: List[str] = data()
-    result: int = solve02(lines)
-    assert result == 0
+    result: int = solve02(lines, 20)
+    assert result == 56000011

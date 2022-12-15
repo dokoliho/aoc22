@@ -1,6 +1,6 @@
 from typing import List
 from day15 import solve01, solve02, convert_to_sensors, disjunct_cover_intervals_in_line
-from day15 import len_of_intervals, is_line_possible, joined_intervals, free_intervals
+from day15 import len_of_intervals, is_line_possible, free_intervals
 from day15 import covered_interval_in_line_by_one_sensor
 
 
@@ -66,7 +66,8 @@ def test_is_line_possible():
 
 def test_free_intervals():
     sensors = convert_to_sensors(data())
-    intervals = joined_intervals(sensors, 11)
+    intervals = disjunct_cover_intervals_in_line(sensors, 11)
+    intervals = sorted(intervals, key=lambda tup: tup[0])
     free = free_intervals(intervals, 0, 20)
     assert len(free) == 1
     assert free[0] == (14, 14)

@@ -82,13 +82,13 @@ def merge_intervals(intervals, merged_intervals):
             new_merged = [i for i in merged_intervals if not i == interval]
             new_merged.append((new_interval[0], new_interval[1]))
             return merge_intervals(intervals, new_merged)
-        if interval[0] <= new_interval[0] <= interval[1]:
-            # neues Intervall beginnt in einem bestehenden
+        if interval[0] <= new_interval[0] <= interval[1]+1:
+            # neues Intervall beginnt in einem bestehenden oder direkt im ANschluss
             new_merged = [i for i in merged_intervals if not i == interval]
             new_merged.append((interval[0], new_interval[1]))
             return merge_intervals(intervals, new_merged)
-        if interval[0] <= new_interval[1] <= interval[1]:
-            # neues Intervall endet in einem bestehenden
+        if interval[0]-1 <= new_interval[1] <= interval[1]:
+            # neues Intervall endet in einem bestehenden oder direkt davor
             new_merged = [i for i in merged_intervals if not i == interval]
             new_merged.append((new_interval[0], interval[1]))
             return merge_intervals(intervals, new_merged)
@@ -162,7 +162,8 @@ def get_free_position(sensors, max_dim):
     Ermitteln der einen freien Position in den Zeilen 0 bis max_dim
     """
     for y in range(0, max_dim+1):
-        intervals = joined_intervals(sensors, y)
+        intervals = disjunct_cover_intervals_in_line(sensors, y)
+        intervals = sorted(intervals, key=lambda tup: tup[0])
         free = free_intervals(intervals, 0, max_dim)
         if len(free) == 0:
             # keine freie Position -> nächste Zeile
@@ -175,31 +176,21 @@ def get_free_position(sensors, max_dim):
     return None, None
 
 
-def joined_intervals(sensors, line):
-    list_of_intervals = disjunct_cover_intervals_in_line(sensors, line)
-    list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
-    return join_intervals(list_of_intervals, [])
-
-
-def join_intervals(intervals, joined):
-    if len(intervals) == 0:
-        return joined
-    new_interval = intervals.pop(0)
-    if len(joined) == 0:
-        return join_intervals(intervals, [new_interval])
-    if joined[-1][1]+1 == new_interval[0]:
-        new_joined = joined[:-2]
-        new_joined.append((joined[-1], new_interval[1]))
-        return join_intervals(intervals, joined)
-    joined.append(new_interval)
-    return join_intervals(intervals, joined)
-
-
 def is_line_possible(sensors, line, max_dim):
-    list_of_intervals = joined_intervals(sensors, line)
-    return is_line_possible_with_intervals(list_of_intervals, max_dim)
+    """
+    Ermitteln, ob bei gegebenen Sensoren ein freier Platz im Bereich 0 bis max_dim
+    in der Zeile line gegeben ist
+    """
+    intervals = disjunct_cover_intervals_in_line(sensors, line)
+    return is_line_possible_with_intervals(intervals, max_dim)
+
 
 def is_line_possible_with_intervals(list_of_intervals, max_dim):
+    """
+    Ermitteln, ob bei gegebenen Ausschlussintervallen ein freier Platz im Bereich 0 bis max_dim gegeben ist
+    Dazu wird zunächst das Intervall gesucht, in dem die Null ausgeschlossen wird
+    Dieses Intervall muss bis max_dim reichen, um die Zeile auszuschließen
+    """
     line_possible = True
     for interval in list_of_intervals:
         if interval[0] <= 0 <= interval[1]:
@@ -209,10 +200,11 @@ def is_line_possible_with_intervals(list_of_intervals, max_dim):
     return line_possible
 
 
-
-
-
 def free_intervals(sorted_intervals, lower_bound, upper_bound):
+    """
+    Ermitteln der freien Intervalle zwischen lower_bound und upper_bound
+    basierend auf einer gegebenen sortierten Liste von Ausschlussintervallen
+    """
     if lower_bound > upper_bound:
         return []
     if len(sorted_intervals) == 0:

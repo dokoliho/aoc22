@@ -44,20 +44,23 @@ def solve02(lines: List[str]) -> int:
     """
     """
     sensors = convert_to_sensor_map(lines)
-    max_dim = 4000000
+    x, y = get_free_position(sensors, 4000)
+    return x * y
+
+
+def get_free_position(sensors, max_dim):
     for y in range(0, max_dim+1):
-        list_of_intervals = covered_intervals_in_line(sensors, y)
-        list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
-        list_of_intervals = join_intervals(list_of_intervals, [])
-        line_possible = True
-        for interval in list_of_intervals:
-            if interval[0] <= 0 and interval[1] >=0:
-                if interval[1] >= max_dim:
-                    line_possible = False
-                    break
-        if line_possible:
-            print(y)
-    return 0
+        intervals = joined_intervals(sensors, y)
+        free = free_intervals(intervals, 0, max_dim)
+        if len(free) == 0:
+            continue
+        if len(free) == 1:
+            if free[0][0] != free[0][1]:
+                raise Exception("Free interval has len > 1")
+            return free[0][0], y
+        raise Exception("More than 1 free interval")
+    return None, None
+
 
 def convert_to_sensor_map(lines: List[str]):
     return list(map(lambda line: convert_line_to_tuple(line.strip()), lines))
@@ -127,11 +130,11 @@ def simplify_intervals(intervals, simplified):
             new_simplified = [i for i in simplified if not i == interval]
             new_simplified.append((new_interval[0], new_interval[1]))
             return simplify_intervals(intervals, new_simplified)
-        if interval[0] <= new_interval[0]:
+        if interval[0] <= new_interval[0] <= interval[1]:
             new_simplified = [i for i in simplified if not i == interval]
             new_simplified.append((interval[0], new_interval[1]))
             return simplify_intervals(intervals, new_simplified)
-        if interval[1] >= new_interval[1]:
+        if interval[0] <= new_interval[1] <= interval[1]:
             new_simplified = [i for i in simplified if not i == interval]
             new_simplified.append((new_interval[0], interval[1]))
             return simplify_intervals(intervals, new_simplified)
@@ -151,6 +154,43 @@ def join_intervals(intervals, joined):
         return join_intervals(intervals, joined)
     joined.append(new_interval)
     return join_intervals(intervals, joined)
+
+
+def is_line_possible(sensors, line, max_dim):
+    list_of_intervals = joined_intervals(sensors, line)
+    return is_line_possible_with_intervals(list_of_intervals, max_dim)
+
+def is_line_possible_with_intervals(list_of_intervals, max_dim):
+    line_possible = True
+    for interval in list_of_intervals:
+        if interval[0] <= 0 <= interval[1]:
+            if interval[1] >= max_dim:
+                line_possible = False
+                break
+    return line_possible
+
+
+def joined_intervals(sensors, line):
+    list_of_intervals = covered_intervals_in_line(sensors, line)
+    list_of_intervals = sorted(list_of_intervals, key=lambda tup: tup[0])
+    return join_intervals(list_of_intervals, [])
+
+
+def free_intervals(sorted_intervals, lower_bound, upper_bound):
+    if lower_bound > upper_bound:
+        return []
+    if len(sorted_intervals) == 0:
+        return [(lower_bound, upper_bound)]
+    interval = sorted_intervals.pop(0)
+    if interval[0] <= lower_bound:
+        if interval[1] < lower_bound:
+            return free_intervals(sorted_intervals, lower_bound, upper_bound)
+        else:
+            return free_intervals(sorted_intervals, interval[1]+1, upper_bound)
+    if upper_bound >= interval[0]:
+        return [(lower_bound, interval[0]-1)] + free_intervals(sorted_intervals, interval[1]+1, upper_bound)
+    else:
+        return [(lower_bound, upper_bound)]
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 from typing import List
-from day15 import solve01, solve02, convert_to_sensor_map, cover_in_line, covered_intervals_in_line, len_of_intervals, len_of_intervals_without_beacons
+from day15 import solve01, solve02, convert_to_sensor_map, cover_in_line, covered_intervals_in_line, len_of_intervals, len_of_intervals_without_beacons, is_line_possible, joined_intervals, free_intervals
 
 
 def data() -> List[str]:
@@ -54,12 +54,24 @@ def test_covered_intervals_in_line():
     assert l == 26
 
 
+def test_is_line_possible():
+    sensors = convert_to_sensor_map(data())
+    assert is_line_possible(sensors, 11, 20)
+    assert not is_line_possible(sensors, 10, 20)
+
+
+def test_free_intervals():
+    sensors = convert_to_sensor_map(data())
+    intervals = joined_intervals(sensors, 11)
+    free = free_intervals(intervals, 0, 20)
+    assert len(free) == 1
+    assert free[0] == (14, 14)
 
 
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-
+    assert result == 0
 
 def test_solve2():
     lines: List[str] = data()

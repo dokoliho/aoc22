@@ -3,6 +3,8 @@ from day16 import solve01, solve02
 from day16 import convert_line_to_valve, convert_to_valves
 
 
+
+
 def data() -> List[str]:
     return [
         'Valve AA has flow rate=0; tunnels lead to valves DD, II, BB\n',
@@ -30,18 +32,15 @@ def test_convert():
     lines = data()
     valves = convert_to_valves(lines)
     assert len(valves) == 10
-    assert 'BB' in valves
-    assert valves['BB'][0] == 13
-    assert valves['BB'][1] == ['CC', 'AA']
 
 
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-    assert result == 0
+    assert result == 1651
 
 
 def test_solve2():
     lines: List[str] = data()
     result: int = solve02(lines)
-    assert result == 0
+    assert result == 1707

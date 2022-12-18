@@ -35,7 +35,7 @@ class Shape:
         """
         return len(list(filter(lambda c: c in self.cubes, self.neighbours(cube))))
 
-    def get_borders(self):
+    def get_hull(self):
         """
         Abmessungen des Gebildes
         -> x_min, x_max, y_min, y_max, z_min, z_max
@@ -48,42 +48,35 @@ class Shape:
 
     def reachable_surface(self):
         """
-        Ermitteln der Anzahl der von Wasser erreichbaren Oberflächenseiten
-        Idee: Zunächst werden die "Luftwürfel" des Gebildes ermittelt
-        Dabei wird auf allen Seiten ein "Luftfilm" um das Gebilde hinzugefügt
-        Anschließend wird - beginnend an einer Ecke - die Luft geflutet und die
-        erreichten Seiten gezählt
+        Fluten der Luft von außen mittels Breitensuche
+        Jede getroffene Seite wird aufaddiert
         """
-        air_cubes, start_cube = self.create_air_cubes()
-        return self.count_reachable_surface_sides(start_cube, air_cubes)
-
-    def create_air_cubes(self):
-        """
-        Generieren der Liste der Luftwürfel und eines Startwürfels an einer Ecke
-        """
-        cubes = []
-        x_min, x_max, y_min, y_max, z_min, z_max = self.get_borders()
-        for x in range(x_min-1, x_max+2):
-            for y in range(y_min-1, y_max+2):
-                for z in range(z_min-1, z_max+2):
-                    if (x, y, z) not in self.cubes:
-                        cubes.append((x, y, z))
-        return cubes, (x_min-1, y_min-1, z_min-1)
-
-    def count_reachable_surface_sides(self, start_cube, air_cubes):
-        """
-        Fluten der Luft vom Startpunkt
-        """
-        q = [start_cube]
+        flooded = []
         reachable = 0
+        hull = self.get_hull()
+        x_min, x_max, y_min, y_max, z_min, z_max = hull
+        q = [(x_min-1, y_min-1, z_min-1)]
         while q:
             cube = q.pop(0)
-            reachable += self.count_neighbours(cube)
-            air_cubes.remove(cube)
+            flooded.append(cube)
             for next_cube in self.neighbours(cube):
-                if next_cube in air_cubes and next_cube not in q:
-                    q.append(next_cube)
+                if not self.is_in_hull(next_cube, hull):
+                    continue
+                if next_cube in q or next_cube in flooded:
+                    continue
+                if next_cube in self.cubes:
+                    reachable += 1
+                    continue
+                q.append(next_cube)
         return reachable
+
+    def is_in_hull(self, cube, hull):
+        """
+        Überprüfen, ob sich der Würfel noch in der Hülle + 1 befindet
+        """
+        x, y, z = cube
+        x_min, x_max, y_min, y_max, z_min, z_max = hull
+        return x_min-1 <= x <= x_max+1 and y_min-1 <= y <= y_max+1 and z_min-1 <= z <= z_max+1
 
     def neighbours(self, cube):
         """

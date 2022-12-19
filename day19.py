@@ -106,6 +106,9 @@ def apply_blueprint(blueprint, stock, robots, ttl=24):
         if ttl == 0:
             max_geodes = max(max_geodes, stock[3])
             continue
+        upper_bound = stock[3] + ttl * robots[3] + ttl * ttl
+        if upper_bound < max_geodes:
+            continue
         # Nur Produzieren durch die Roboter, keine Generierung von neuen Robotern
         new_stock = let_robots_work(stock, robots, blueprint.max_costs, ttl)
         q = append_new_situation(q, new_stock, robots, ttl)

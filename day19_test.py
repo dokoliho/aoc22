@@ -15,21 +15,31 @@ def test_convert():
     assert len(blueprints) == 2
 
 
-def test_apply_blueprint():
+def test_apply_blueprint1():
     lines = data()
     blueprints = convert(lines)
-    stock = (0, 0, 0, 0)
-    robots = (1, 0, 0, 0)
+    stock = [0, 0, 0, 0]
+    robots = [1, 0, 0, 0]
     result = apply_blueprint(blueprints[0], stock, robots, ttl=24)
     assert result == 9
+
+
+def test_apply_blueprint2():
+    lines = data()
+    blueprints = convert(lines)
+    stock = [0, 0, 0, 0]
+    robots = [1, 0, 0, 0]
+    result = apply_blueprint(blueprints[1], stock, robots, ttl=24)
+    assert result == 12
+
 
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-    assert result == 0
+    assert result == 33
 
 
 def test_solve2():
     lines: List[str] = data()
     result: int = solve02(lines)
-    assert result == 0
+    assert True

@@ -81,7 +81,7 @@ def apply_blueprint(blueprint, stock, robots, ttl=24):
         if ttl == 0:
             max_geodes = max(max_geodes, stock[3])
             continue
-        new_stock = let_robots_work(stock, robots)
+        new_stock = let_robots_work(stock, robots, blueprint.max_costs, ttl)
         append_new_situation(q, new_stock, robots, ttl)
         for index, transition in enumerate(blueprint.transitions):
             if robots[index] >= blueprint.max_costs[index] and index != 3:
@@ -90,20 +90,24 @@ def apply_blueprint(blueprint, stock, robots, ttl=24):
                 continue        #    Nicht mehr Robots für etwas, das wir nicht mehr ausgeben können
             applicable, new_stock, new_robots = apply_transition(transition, stock, robots)
             if applicable:
-                new_stock = let_robots_work(new_stock, robots)
+                let_robots_work(stock, robots, blueprint.max_costs, ttl)
                 append_new_situation(q, new_stock, new_robots, ttl)
     return max_geodes
 
 
-def let_robots_work(stock, robots):
+def let_robots_work(stock, robots, costs, ttl):
     new_stock = list(stock)
     for index, amount in enumerate(robots):
         new_stock[index] += amount
+        if index != 3:
+            new_stock[index] = min(new_stock[index], (ttl-1)*costs[index])
     return tuple(new_stock)
 
 
 def append_new_situation(queue, stock, robots, ttl):
-    queue.append((stock, robots, ttl - 1))
+    situation = (stock, robots, ttl - 1)
+    if not situation in queue:
+        queue.append(situation)
 
 
 if __name__ == '__main__':

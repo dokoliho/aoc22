@@ -20,7 +20,7 @@ def test_apply_blueprint():
     blueprints = convert(lines)
     stock = (0, 0, 0, 0)
     robots = (1, 0, 0, 0)
-    result = apply_blueprint(blueprints[0], stock, robots, ttl=10)
+    result = apply_blueprint(blueprints[0], stock, robots, ttl=24)
     assert result == 9
 
 def test_solve1():

@@ -1,5 +1,4 @@
-from functools import reduce
-from typing import List, Tuple
+from typing import List
 import re
 from time import perf_counter as pfc
 
@@ -33,7 +32,7 @@ class Monkey:
             self.operation = None
             self.has_human_dep = True if self.name == 'humn' else False
             return
-        m = re.search(r"^([a-z]{4}) ([\+, \-, \*, /]) ([a-z]{4})$", tokens[1].strip())
+        m = re.search(r"^([a-z]{4}) ([+\-*/]) ([a-z]{4})$", tokens[1].strip())
         if m:
             self.dependencies = [m.group(1), m.group(3)]
             self.value = tokens[1].strip()

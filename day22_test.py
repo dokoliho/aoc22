@@ -1,5 +1,5 @@
 from typing import List
-from day22 import solve01, solve02, convert
+from day22 import solve01, solve02, convert, Maze
 
 
 def data() -> List[str]:
@@ -23,7 +23,17 @@ def data() -> List[str]:
 
 def test_convert():
     lines = data()
+    maze, command = convert(lines)
+    assert command == "10R5L5R10L4R5L5"
+    assert len(maze.lines) == 12
 
+
+def test_start_pos():
+    lines = data()
+    maze, command = convert(lines)
+    row, col = maze.start_position()
+    assert row == 0
+    assert col == 8
 
 
 

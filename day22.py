@@ -1,5 +1,5 @@
 from typing import List
-import re
+import types
 from time import perf_counter as pfc
 
 
@@ -8,12 +8,38 @@ def read_puzzle(filename: str) -> List[str]:
         return [x for x in f]
 
 
+directions = types.SimpleNamespace()
+directions.RIGHT = 0
+directions.DOWN = 1
+directions.LEFT = 2
+directions.UP = 3
 
 
-class Direction():
+class Transition:
+    def __init__(self, row_func, col_func):
+        self.row_func = row_func
+        self.col_func = col_func
+
+    def calc_row(self, row, col, mlen):
+        return self.row_func(row, col, mlen)
+
+    def calc_col(self, row, col, mlen):
+        return self.col_func(row, col, mlen)
+
+    @staticmethod
+    def transition_sequence(t1,  t2):
+        return Transition(
+            lambda row, col, mlen: t2.row_func(t1.row_func(row, col, mlen), t1.col_func(row, col, mlen), mlen),
+            lambda row, col, mlen: t2.col_func(t1.row_func(row, col, mlen), t1.col_func(row, col, mlen), mlen)
+        )
+
+    def __repr__(self):
+        return "Transition"
+
+class Direction:
 
     def __init__(self, facing):
-        self.facing = facing
+        self.facing = facing % 4
 
     def turn_right(self):
         self.facing = (self.facing + 1) % 4
@@ -25,25 +51,34 @@ class Direction():
 
     def delta_row(self):
         match self.facing:
-            case 0: return 0
-            case 1: return 1
-            case 2: return 0
-            case 3: return -1
+            case directions.RIGHT:
+                return 0
+            case directions.DOWN:
+                return 1
+            case directions.LEFT:
+                return 0
+            case directions.UP:
+                return -1
 
     def delta_col(self):
         match self.facing:
-            case 0: return 1
-            case 1: return 0
-            case 2: return -1
-            case 3: return 0
+            case directions.RIGHT:
+                return 1
+            case directions.DOWN:
+                return 0
+            case directions.LEFT:
+                return -1
+            case directions.UP:
+                return 0
 
-DIR_UP = Direction(3)
-DIR_DOWN = Direction(1)
-DIR_RIGHT = Direction(0)
-DIR_LEFT = Direction(2)
+
+DIR_UP = Direction(directions.UP)
+DIR_DOWN = Direction(directions.DOWN)
+DIR_RIGHT = Direction(directions.RIGHT)
+DIR_LEFT = Direction(directions.LEFT)
 
 
-class Maze():
+class Maze:
 
     def __init__(self, lines):
         max_len = max(map(len, lines))
@@ -52,11 +87,12 @@ class Maze():
     def start_position(self):
         for row, line in enumerate(self.lines):
             col = line.find(".")
-            if col >=0:
+            if col >= 0:
                 return row, col
         raise Exception("No starting position")
 
-    def get_tile(self, row, col):
+    def get_tile(self, position):
+        row, col = position
         return self.lines[row][col]
 
     def move_one_step(self, position, direction: Direction):
@@ -65,7 +101,7 @@ class Maze():
         while tile == " ":
             row = (row + direction.delta_row()) % len(self.lines)
             col = (col + direction.delta_col()) % len(self.lines[row])
-            tile = self.get_tile(row, col)
+            tile = self.get_tile((row, col))
         if tile == ".":
             return (row, col), direction, True
         if tile == "#":
@@ -86,7 +122,77 @@ class Maze():
         return position, direction
 
 
+class Side:
+    def __init__(self, top, left):
+        self.connected = {}
+        self.top = top
+        self.left = left
+
+    def __repr__(self):
+        return f"({self.top}, {self.left})"
+
+
 class CubeMaze(Maze):
+
+    def __init__(self, lines):
+        super().__init__(lines)
+        slen = self.get_side_len()
+        self.sides = []
+        for row in range(0, len(self.lines), slen):
+            for col in range(0, len(self.lines[0]), slen):
+                if self.get_tile((row, col)) != " ":
+                    self.sides.append(Side(row, col))
+        assert len(self.sides) == 6
+        self.create_initial_connections()
+        self.complete_connections()
+
+    def create_initial_connections(self):
+        slen = self.get_side_len()
+        for index, side1 in enumerate(self.sides):
+            for side2 in self.sides[index + 1:]:
+                if side1.top == side2.top:
+                    if side1.left == side2.left - slen:
+                        side1.connected[directions.RIGHT] = (side2, 0)
+                        side2.connected[directions.LEFT] = (side1, 0)
+                    if side1.left == side2.left + slen:
+                        side1.connected[directions.LEFT] = (side2, 0)
+                        side2.connected[directions.RIGHT] = (side1, 0)
+                if side1.left == side2.left:
+                    if side1.top == side2.top - slen:
+                        side1.connected[directions.DOWN] = (side2, 0)
+                        side2.connected[directions.UP] = (side1, 0)
+                    if side1.top == side2.top + slen:
+                        side1.connected[directions.UP] = (side2, 0)
+                        side2.connected[directions.DOWN] = (side1, 0)
+
+    def complete_connections(self):
+        added = False
+        for side in self.sides:
+            for direction in range(4):
+                if side.connected.get(direction) is None:
+                    added = added or self.check_and_add(side, direction)
+        if added:
+            self.complete_connections()
+
+    def check_and_add(self, side, direction):
+        for deroute in [-1, 1]:
+            deroute_direction = (direction + deroute) % 4
+            if side.connected.get(deroute_direction):
+                middle, middle_turn = side.connected.get(deroute_direction)
+                check_direction = (direction + middle_turn + 4 ) % 4
+                if middle.connected.get(check_direction):
+                    target, target_turn = middle.connected.get(check_direction)
+                    side.connected[direction] = (target, (middle_turn + target_turn + deroute + 4) % 4)
+                    return True
+        return False
+
+
+    def get_side_by_position(self, sides, top, left):
+        for side in sides:
+            if side.left == left and side.top == top:
+                return side
+        return None
+
 
     def get_side_len(self):
         if len(self.lines) == len(self.lines[0]):
@@ -95,170 +201,48 @@ class CubeMaze(Maze):
             larger = max(len(self.lines), len(self.lines[0]))
             return larger // 4
 
-    def get_side_lines(self, side_row, side_col):
-        side_len = self.get_side_len()
-        if side_row * side_len > len(self.lines) or side_col * side_len > len(self.lines[0]):
-            return self.empty_side()
-        selected_lines = self.lines[side_row*side_len:(side_row+1)*side_len]
-        return list(map(lambda l: l[side_col*side_len:(side_col+1*side_len)], selected_lines))
-
-    def empty_side(self):
-        side_len = self.get_side_len()
-        empty_line = " " * side_len
-        return [empty_line for _ in range(side_len)]
-
     def get_local_position_on_side(self, position):
         row, col = position
         side_len = self.get_side_len()
-        return (row % side_len, col % side_len)
-
-    def get_side(self, position):
-        row, col = position
-        side_len = self.get_side_len()
-        return row // side_len, col // side_len
-
-    def get_global_position(self, side_row, side_col, local_position):
-        row, col = local_position
-        side_len = self.get_side_len()
-        side_rows = len(self.lines) // side_len
-        side_cols = len(self.lines[0]) // side_len
-        side_row = (side_row + side_rows) % side_rows
-        side_col = (side_col + side_cols) % side_cols
-        return side_row * side_len + row, side_col * side_len + col
+        return (row + side_len) % side_len, (col + side_len) % side_len
 
     def move_one_step(self, position, direction: Direction):
-        side_pos = self.get_side(position)
-        row, col = position
-        new_row = row + direction.delta_row()
-        new_col = col + direction.delta_col()
+        current_side_index = self.get_side_index(position)
+        new_position = self.new_position_after_step(position, direction)
+        new_side_index = self.get_side_index(new_position)
         new_direction = direction
-        if side_pos != self.get_side((new_row, new_col)):
-            if direction == DIR_UP:
-                (new_row, new_col), new_direction = self.row_underrun((row, col))
-            if direction == DIR_DOWN:
-                (new_row, new_col), new_direction = self.row_overrun((row, col))
-            if direction == DIR_LEFT:
-                (new_row, new_col), new_direction = self.col_underrun((row, col))
-            if direction == DIR_RIGHT:
-                (new_row, new_col), new_direction = self.col_overrun((row, col))
-        tile = self.get_tile(new_row, new_col)
+        if current_side_index != new_side_index:
+            local_row, local_col = self.get_local_position_on_side(new_position)
+            mlen = self.get_side_len() - 1
+            new_side, turn = self.sides[current_side_index].connected[direction.facing]
+            new_direction = Direction((direction.facing + turn + 4) % 4)
+            transitions = [
+                [(local_row, 0), (0, mlen - local_row), (mlen - local_row, mlen), (mlen, local_row)],     # Right
+                [(0, local_col), (local_col, mlen), (mlen, mlen - local_col), (mlen - local_col, 0)],     # Down
+                [(local_row, mlen), (mlen, mlen-local_row), (mlen-local_row, 0), (0, local_row)],     # Left
+                [(mlen, local_col), (local_col, 0), (0, mlen-local_col), (mlen-local_col, mlen)],   # Up
+            ]
+            new_row, new_col = transitions[direction.facing][turn]
+            new_position = (new_side.top + new_row, new_side.left + new_col)
+        tile = self.get_tile(new_position)
         if tile == ".":
-            return (new_row, new_col), new_direction, True
+            return new_position, new_direction, True
         if tile == "#":
-            return (row, col), direction, False
+            return position, direction, False
 
-    def row_underrun(self, position):
-        side_len = self.get_side_len()
-        side_position = self.get_local_position_on_side(position)
-        row, col = side_position
-        side_row, side_col = self.get_side(position)
-        # upper
-        position = self.get_global_position(side_row - 1, side_col, (side_len-1, col))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_UP
-        # upper left
-        position = self.get_global_position(side_row - 1, side_col - 1, (side_len - col - 1, side_len - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_LEFT
-        # upper right
-        position = self.get_global_position(side_row - 1, side_col + 1, (col, 0))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_RIGHT
-        # upper double left
-        position = self.get_global_position(side_row - 1, side_col - 2, (0, side_len - col - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_DOWN
-        # upper double right
-        position = self.get_global_position(side_row - 1, side_col + 2, (0, side_len - col - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_DOWN
-        raise Exception("No Continuation found")
+    @staticmethod
+    def new_position_after_step(position, direction: Direction):
+        curr_row, curr_col = position
+        new_row = curr_row + direction.delta_row()
+        new_col = curr_col + direction.delta_col()
+        return new_row, new_col
 
-    def row_overrun(self, position):
+    def get_side_index(self, position):
         side_len = self.get_side_len()
-        side_position = self.get_local_position_on_side(position)
-        row, col = side_position
-        side_row, side_col = self.get_side(position)
-        # lower
-        position = self.get_global_position(side_row + 1, side_col, (0, col))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_DOWN
-        # lower left
-        position = self.get_global_position(side_row + 1, side_col - 1, (col, side_len - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_LEFT
-        # lower right
-        position = self.get_global_position(side_row + 1, side_col + 1, (side_len - col - 1, 0))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_RIGHT
-        # lower double left
-        position = self.get_global_position(side_row + 1, side_col - 2, (side_len - 1, side_len - col - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_UP
-        # lower double right
-        position = self.get_global_position(side_row + 1, side_col + 2, (side_len - 1, side_len - col - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_UP
-        raise Exception("No Continuation found")
-
-    def col_underrun(self, position):
-        side_len = self.get_side_len()
-        local_position = self.get_local_position_on_side(position)
-        row, col = local_position
-        side_row, side_col = self.get_side(position)
-        # left
-        position = self.get_global_position(side_row, side_col - 1, (row, side_len - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_LEFT
-        # left upper
-        position = self.get_global_position(side_row - 1, side_col - 1, (side_len - 1, side_len - col - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_UP
-        # left lower
-        if side_col == 0:
-            position = self.get_global_position(side_row + 1, side_col - 1, (side_len-1, side_len - row - 1))
-            if self.get_tile(position[0], position[1]) != " ":
-                return position, DIR_UP
-        else:
-            position = self.get_global_position(side_row + 1, side_col - 1, (0, row))
-            if self.get_tile(position[0], position[1]) != " ":
-                return position, DIR_DOWN
-        # left double upper
-        position = self.get_global_position(side_row - 2, side_col - 1, (side_len - row - 1, 0))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_RIGHT
-        # left double lower
-        position = self.get_global_position(side_row + 2, side_col - 1, (side_len - row - 1, 0))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_RIGHT
-        raise Exception("No Continuation found")
-
-    def col_overrun(self, position):
-        side_len = self.get_side_len()
-        side_position = self.get_local_position_on_side(position)
-        row, col = side_position
-        side_row, side_col = self.get_side(position)
-        # right
-        position = self.get_global_position(side_row, side_col + 1, (row, 0))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_RIGHT
-        # right upper
-        position = self.get_global_position(side_row - 1, side_col + 1, (side_len - 1, row))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_UP
-        # right lower
-        position = self.get_global_position(side_row + 1, side_col + 1, (0, side_len - row - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_DOWN
-        # right double upper
-        position = self.get_global_position(side_row - 2, side_col + 1, (side_len-row-1, side_len - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_LEFT
-        # right double lower
-        position = self.get_global_position(side_row + 2, side_col + 1, (side_len-row-1, side_len - 1))
-        if self.get_tile(position[0], position[1]) != " ":
-            return position, DIR_LEFT
-        raise Exception("No Continuation found")
+        for index, side in enumerate(self.sides):
+            if side.left <= position[1] < side.left + side_len and side.top <= position[0] < side.top + side_len:
+                return index
+        return None
 
 
 def solve01(lines: List[str]) -> int:
@@ -274,7 +258,7 @@ def solve01(lines: List[str]) -> int:
 def solve02(lines: List[str]) -> int:
     """
     """
-    maze, path = convertCube(lines)
+    maze, path = convert_cube(lines)
     position = maze.start_position()
     direction = DIR_RIGHT
     (row, col), end_direction = maze.move_path(position, direction, path)
@@ -288,12 +272,11 @@ def convert(lines):
     return Maze(lines[:-2]), convert_command(lines[-1])
 
 
-def convertCube(lines):
+def convert_cube(lines):
     """
     """
     lines = list(map(lambda l: l[:-1], lines))
     return CubeMaze(lines[:-2]), convert_command(lines[-1])
-
 
 
 def convert_command(command):
@@ -314,7 +297,7 @@ def convert_command(command):
 
 if __name__ == '__main__':
     lines = read_puzzle("data/day22.txt")
-    start = pfc()
-    print(solve01(lines), pfc() - start)
-    start = pfc()
-    print(solve02(lines), pfc() - start)
+    side2 = pfc()
+    print(solve01(lines), pfc() - side2)
+    side2 = pfc()
+    print(solve02(lines), pfc() - side2)

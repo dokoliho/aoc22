@@ -1,5 +1,5 @@
 from typing import List
-from day22 import solve01, solve02, convert, Maze, Direction, DIR_UP, DIR_LEFT, DIR_RIGHT, DIR_DOWN, convertCube
+from day22 import solve01, solve02, convert, Maze, Direction, DIR_UP, DIR_LEFT, DIR_RIGHT, DIR_DOWN, convert_cube
 
 
 def data() -> List[str]:
@@ -71,37 +71,37 @@ def test_move_path():
 
 def test_move_one_pos_in_cube():
     lines = data()
-    maze, command = convertCube(lines)
+    maze, command = convert_cube(lines)
     position = (5, 11)
     direction = DIR_RIGHT
     (row, col), direction, cont = maze.move_one_step(position, direction)
     assert row == 8
     assert col == 14
-    assert direction == DIR_DOWN
+    assert direction.facing == DIR_DOWN.facing
     position = (4, 7)
     direction = DIR_UP
     (row, col), direction, cont = maze.move_one_step(position, direction)
     assert row == 3
     assert col == 8
-    assert direction == DIR_RIGHT
+    assert direction.facing == DIR_RIGHT.facing
     position = (4, 0)
     direction = DIR_LEFT
     (row, col), direction, cont = maze.move_one_step(position, direction)
     assert row == 11
     assert col == 15
-    assert direction == DIR_UP
+    assert direction.facing == DIR_UP.facing
     position = (8,8)
     direction = DIR_LEFT
     (row, col), direction, cont = maze.move_one_step(position, direction)
     assert row == 7
     assert col == 7
-    assert direction == DIR_UP
+    assert direction.facing == DIR_UP.facing
     position = (7,0)
     direction = DIR_DOWN
     (row, col), direction, cont = maze.move_one_step(position, direction)
     assert row == 11
     assert col == 11
-    assert direction == DIR_UP
+    assert direction.facing == DIR_UP.facing
 
 
 

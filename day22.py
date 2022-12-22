@@ -8,10 +8,39 @@ def read_puzzle(filename: str) -> List[str]:
         return [x for x in f]
 
 
+class Direction():
+
+    def __init__(self, facing):
+        self.facing = facing
+
+    def turn_right(self):
+        self.facing = (self.facing + 1) % 4
+
+    def turn_left(self):
+        self.turn_right()
+        self.turn_right()
+        self.turn_right()
+
+    def delta_row(self):
+        match self.facing:
+            case 0: return 0
+            case 1: return 1
+            case 2: return 0
+            case 3: return -1
+
+    def delta_col(self):
+        match self.facing:
+            case 0: return 1
+            case 1: return 0
+            case 2: return -1
+            case 3: return 0
+
+
 class Maze():
 
     def __init__(self, lines):
-        self.lines = lines
+        max_len = max(map(len, lines))
+        self.lines = list(map(lambda l: l.ljust(max_len), lines))
 
     def start_position(self):
         for row, line in enumerate(self.lines):
@@ -19,6 +48,11 @@ class Maze():
             if col >=0:
                 return row, col
         raise Exception("No starting position")
+
+    def move_one_step(self, position, direction: Direction):
+        row, col = position
+        row == (row + direction.delta_row()) % len(self.lines)
+        col == (col + direction.delta_col()) % len(self.lines[row])
 
 
 def solve01(lines: List[str]) -> int:

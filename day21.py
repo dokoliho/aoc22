@@ -12,7 +12,7 @@ class Monkey:
     """
     Repräsentation für einen Affen
     Attribute:
-    - has_human_dep     Hängt der Wert vom Menschen ab? True/False/None (=ungeklärt)
+    - has_human_dep     hängt der Wert vom Menschen ab? True/False/None (=ungeklärt)
     - name              Name des Affen
     - dependencies      Liste der Affennamen, von denen der Affe abhängig ist
     - value             Integer-Wert oder Formel
@@ -66,8 +66,8 @@ class Monkey:
         """
         Berechnung der Anpassung
         Voraussetzung: Abhängigkeit vom Menschen
-        Rekursiver Abstieg im Berechnungsbaum bis zum Menschen
-        Dort Rekursionsabbruch
+        rekursiver Abstieg im Berechnungsbaum bis zum Menschen
+        dort Rekursionsabbruch
         """
         if not self.has_human_dependency(all_monkeys):
             raise Exception(f"{self.name}: Nothing to adjust")
@@ -113,7 +113,7 @@ def solve01(lines: List[str]) -> int:
 
 def solve02(lines: List[str]) -> int:
     """
-    Berechnung des Werts von humn, so dass gleiche Werte bei root auflaufen
+    Berechnung des Werts von humn, sodass gleiche Werte bei root auflaufen
     """
     monkeys = convert(lines)
     return monkeys['root'].adjust_human(monkeys)

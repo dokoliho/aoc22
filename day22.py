@@ -49,16 +49,44 @@ class Maze():
                 return row, col
         raise Exception("No starting position")
 
+    def get_tile(self, row, col):
+        return self.lines[row][col]
+
     def move_one_step(self, position, direction: Direction):
         row, col = position
-        row == (row + direction.delta_row()) % len(self.lines)
-        col == (col + direction.delta_col()) % len(self.lines[row])
+        tile = " "
+        while tile == " ":
+            row = (row + direction.delta_row()) % len(self.lines)
+            col = (col + direction.delta_col()) % len(self.lines[row])
+            tile = self.get_tile(row, col)
+        if tile == ".":
+            return (row, col), True
+        if tile == "#":
+            return (position[0], position[1]), False
+
+    def move_path(self, position, direction, path):
+        for token in path:
+            if isinstance(token, int):
+                for _ in range(token):
+                    position, cont = self.move_one_step(position, direction)
+                    if cont is False:
+                        break
+            else:
+                if token == "R":
+                    direction.turn_right()
+                if token == "L":
+                    direction.turn_left()
+        return position, direction
 
 
 def solve01(lines: List[str]) -> int:
     """
     """
-    return 0
+    maze, path = convert(lines)
+    position = maze.start_position()
+    direction = Direction(0)
+    (row, col), end_direction = maze.move_path(position, direction, path)
+    return 1000 * (row + 1) + 4 * (col + 1) + end_direction.facing
 
 
 def solve02(lines: List[str]) -> int:
@@ -71,9 +99,23 @@ def convert(lines):
     """
     """
     lines = list(map(lambda l: l[:-1], lines))
-    return Maze(lines[:-2]), lines[-1]
+    return Maze(lines[:-2]), convert_command(lines[-1])
 
 
+def convert_command(command):
+    result = []
+    i = 0
+    while i < len(command):
+        if command[i].isdigit():
+            j = i
+            while j < len(command) and command[j].isdigit():
+                j += 1
+            result.append(int(command[i:j]))
+            i = j
+        else:
+            result.append(command[i])
+            i += 1
+    return result
 
 
 if __name__ == '__main__':

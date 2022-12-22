@@ -15,29 +15,10 @@ directions.LEFT = 2
 directions.UP = 3
 
 
-class Transition:
-    def __init__(self, row_func, col_func):
-        self.row_func = row_func
-        self.col_func = col_func
-
-    def calc_row(self, row, col, mlen):
-        return self.row_func(row, col, mlen)
-
-    def calc_col(self, row, col, mlen):
-        return self.col_func(row, col, mlen)
-
-    @staticmethod
-    def transition_sequence(t1,  t2):
-        return Transition(
-            lambda row, col, mlen: t2.row_func(t1.row_func(row, col, mlen), t1.col_func(row, col, mlen), mlen),
-            lambda row, col, mlen: t2.col_func(t1.row_func(row, col, mlen), t1.col_func(row, col, mlen), mlen)
-        )
-
-    def __repr__(self):
-        return "Transition"
-
 class Direction:
-
+    """
+    Repräsentation einer Richtung
+    """
     def __init__(self, facing):
         self.facing = facing % 4
 
@@ -79,7 +60,9 @@ DIR_LEFT = Direction(directions.LEFT)
 
 
 class Maze:
-
+    """
+    Der Plan (flach, kein Kubus)
+    """
     def __init__(self, lines):
         max_len = max(map(len, lines))
         self.lines = list(map(lambda l: l.ljust(max_len), lines))
@@ -123,6 +106,13 @@ class Maze:
 
 
 class Side:
+    """
+    Repräsentation einer Seite des Würfels
+    Attribute:
+    connected:      Dictionary, das zu jeder Richtung die benachbarte Fläche und die Drehung der Fläche speichert
+    top:            oberes Ende der Seite im globalen Koordinatensystem
+    left:           linkes Ende der Seite im globalen Koordinatensystem
+    """
     def __init__(self, top, left):
         self.connected = {}
         self.top = top
@@ -133,7 +123,9 @@ class Side:
 
 
 class CubeMaze(Maze):
-
+    """
+    Repräsentation des Plans (kubisch)
+    """
     def __init__(self, lines):
         super().__init__(lines)
         slen = self.get_side_len()
@@ -147,6 +139,10 @@ class CubeMaze(Maze):
         self.complete_connections()
 
     def create_initial_connections(self):
+        """
+        Eintragen der direkt benachbarten Seiten im Plan.
+        Keine Drehung notwendig
+        """
         slen = self.get_side_len()
         for index, side1 in enumerate(self.sides):
             for side2 in self.sides[index + 1:]:
@@ -166,6 +162,9 @@ class CubeMaze(Maze):
                         side2.connected[directions.DOWN] = (side1, 0)
 
     def complete_connections(self):
+        """
+        Sukzessives Ergänzen der fehlenden Verbindungen.
+        """
         added = False
         for side in self.sides:
             for direction in range(4):
@@ -175,6 +174,12 @@ class CubeMaze(Maze):
             self.complete_connections()
 
     def check_and_add(self, side, direction):
+        """
+        Für eine fehlende Verbindung wird nachgesehen,
+        ob evtl. nach einem Seitschritt in die geforderte Richtung gegangen
+        werden kann. In diesem Fall, kann die Seite als Nachbar eingetragen werden,
+        allerdings mit einer Drehung.
+        """
         for deroute in [-1, 1]:
             deroute_direction = (direction + deroute) % 4
             if side.connected.get(deroute_direction):
@@ -186,15 +191,10 @@ class CubeMaze(Maze):
                     return True
         return False
 
-
-    def get_side_by_position(self, sides, top, left):
-        for side in sides:
-            if side.left == left and side.top == top:
-                return side
-        return None
-
-
     def get_side_len(self):
+        """
+        Ermittlung der Seitenlänge des Würfels
+        """
         if len(self.lines) == len(self.lines[0]):
             return len(self.lines) // 3
         else:
@@ -202,11 +202,20 @@ class CubeMaze(Maze):
             return larger // 4
 
     def get_local_position_on_side(self, position):
+        """
+        Übertragung einer globalen Position in eine lokale Position auf einer Seite
+        """
         row, col = position
         side_len = self.get_side_len()
         return (row + side_len) % side_len, (col + side_len) % side_len
 
     def move_one_step(self, position, direction: Direction):
+        """
+        Ein Schritt wird ausgeführt.
+        Dazu wird zunächst die neue globale Position bestimmt.
+        Wenn diese auf einer anderen Seite liegt, als die ursprüngliche Position,
+        muss die richtige Seite ermittelt und das Koordinatensystem ggf. gedreht werden.
+        """
         current_side_index = self.get_side_index(position)
         new_position = self.new_position_after_step(position, direction)
         new_side_index = self.get_side_index(new_position)
@@ -216,6 +225,8 @@ class CubeMaze(Maze):
             mlen = self.get_side_len() - 1
             new_side, turn = self.sides[current_side_index].connected[direction.facing]
             new_direction = Direction((direction.facing + turn + 4) % 4)
+            # Die nachfolgenden Transitionen geben für jede Bewegungsrichtung und
+            # jede Drehung an, wo weitergearbeitet werden muss
             transitions = [
                 [(local_row, 0), (0, mlen - local_row), (mlen - local_row, mlen), (mlen, local_row)],     # Right
                 [(0, local_col), (local_col, mlen), (mlen, mlen - local_col), (mlen - local_col, 0)],     # Down
@@ -238,6 +249,9 @@ class CubeMaze(Maze):
         return new_row, new_col
 
     def get_side_index(self, position):
+        """
+        Ermitteln der Seite für eine globale Position
+        """
         side_len = self.get_side_len()
         for index, side in enumerate(self.sides):
             if side.left <= position[1] < side.left + side_len and side.top <= position[0] < side.top + side_len:
@@ -247,6 +261,7 @@ class CubeMaze(Maze):
 
 def solve01(lines: List[str]) -> int:
     """
+    Ausführung auf dem flachen Plan
     """
     maze, path = convert(lines)
     position = maze.start_position()
@@ -257,6 +272,7 @@ def solve01(lines: List[str]) -> int:
 
 def solve02(lines: List[str]) -> int:
     """
+    Ausführung auf dem Kubus
     """
     maze, path = convert_cube(lines)
     position = maze.start_position()

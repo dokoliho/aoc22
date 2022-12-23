@@ -38,12 +38,12 @@ class Elf:
         """
         Prüfung, ob es Nachbarn gibt
         """
-        count = 0
-        for row in range(self.row-1, self.row+2):
-            for col in range(self.col-1, self.col+2):
-                if (row, col) in plan.positions:
-                    count += 1
-        return count <= 1
+        neighbours = [(row, col)
+                      for row in range(self.row - 1, self.row + 2)
+                      for col in range(self.col - 1, self.col + 2)
+                      if (row, col) in plan.positions and (row, col) != (self.row, self.col)
+                      ]
+        return len(neighbours) == 0
 
     def generate_proposal(self, plan):
         """
@@ -52,14 +52,21 @@ class Elf:
         self.proposal = None
         if not self.is_lonely(plan):
             for direction in range(4):
-                test_cells, dest_cell = self.seq[(plan.first_direction + direction) % 4]
-                if reduce(
-                        lambda acc, test: acc and (self.row + test[0], self.col + test[1]) not in plan.positions,
-                        test_cells,
-                        True):
-                    self.proposal = (self.row + dest_cell[0], self.col + dest_cell[1])
+                self.proposal =  self.check_direction(plan, direction)
+                if self.proposal is not None:
                     break
         return self.proposal
+
+    def check_direction(self, plan, direction):
+        """
+        Check ob frei
+        """
+        test_cells, dest_cell = self.seq[(plan.first_direction + direction) % 4]
+        all_free = all(((self.row + test[0], self.col + test[1]) not in plan.positions) for test in test_cells)
+        return (self.row + dest_cell[0], self.col + dest_cell[1]) if all_free else None
+
+    def move_to_proposal(self):
+        self.row, self.col = self.proposal
 
 
 class Plan:
@@ -81,6 +88,10 @@ class Plan:
         self.positions[(elf.row, elf.col)] = elf
         self.elves_count = self.elves_count + 1
 
+    def remove_elf(self, elf: Elf):
+        del self.positions[(elf.row, elf.col)]
+        self.elves_count = self.elves_count - 1
+
     def do_round(self):
         self.generate_proposals()
         count = self.move_elves()
@@ -90,9 +101,8 @@ class Plan:
     def generate_proposals(self):
         self.proposals = defaultdict(int)
         for elf in self.positions.values():
-            proposal = elf.generate_proposal(self)
-            if proposal:
-                    self.proposals[proposal] += 1
+            if (proposal := elf.generate_proposal(self)) is not None:
+                self.proposals[proposal] += 1
         return self.proposals.keys()
 
     def move_elves(self):
@@ -101,10 +111,9 @@ class Plan:
         for key in keys:
             elf = self.positions[key]
             if elf.proposal and self.proposals[elf.proposal] == 1:
-                del self.positions[key]
-                elf.row = elf.proposal[0]
-                elf.col = elf.proposal[1]
-                self.positions[(elf.row, elf.col)] = elf
+                self.remove_elf(elf)
+                elf.move_to_proposal()
+                self.add_elf(elf)
                 count += 1
         return count
 
@@ -124,9 +133,9 @@ class Plan:
     def print_plan(self):
         min_row, max_row, min_col, max_col = self.map_extensions()
         print()
-        for row in range(min_row-1, max_row+1):
+        for row in range(min_row-1, max_row+2):
             line = ""
-            for col in range(min_col-1, max_col+1):
+            for col in range(min_col-1, max_col+2):
                 line = line + ("#" if (row, col) in self.positions else ".")
             print(line)
 
@@ -151,6 +160,7 @@ def solve02(lines: List[str]) -> int:
     while True:
         count += 1
         if plan.do_round() == 0:
+            plan.print_plan()
             return count
 
 

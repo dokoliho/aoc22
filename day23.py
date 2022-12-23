@@ -1,5 +1,6 @@
 from functools import reduce
 from typing import List
+from collections import defaultdict
 from time import perf_counter as pfc
 
 
@@ -73,7 +74,7 @@ class Plan:
 
     def __init__(self):
         self.positions = {}
-        self.proposals = {}
+        self.proposals = None
         self.first_direction = 0
 
     def add_elf(self, elf: Elf):
@@ -87,14 +88,11 @@ class Plan:
         return count
 
     def generate_proposals(self):
-        self.proposals = {}
+        self.proposals = defaultdict(int)
         for elf in self.positions.values():
             proposal = elf.generate_proposal(self)
             if proposal:
-                if proposal in self.proposals:
                     self.proposals[proposal] += 1
-                else:
-                    self.proposals[proposal] = 1
         return self.proposals.keys()
 
     def move_elves(self):

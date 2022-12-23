@@ -1,5 +1,3 @@
-import math
-from copy import copy
 from functools import reduce
 from typing import List
 from time import perf_counter as pfc
@@ -11,7 +9,18 @@ def read_puzzle(filename: str) -> List[str]:
 
 
 class Elf:
+    """
+    Repräsentation eines Elfen
+    Attribute:
+    row -> seine aktuelle Zeile
+    col -> seine aktuelle Spalte
+    proposal -> sein Vorschlag für das nächste Feld
+    """
 
+    """
+    Liste der Bewegungsmöglichkeiten
+    Je Richtung gibt es ein Tupel ("Liste der zu checkenden Felder", "Zielfeld")
+    """
     seq = [
         ([(-1, -1), (-1, 0), (-1, 1)], (-1, 0)),  # NORTH
         ([(1, -1), (1, 0), (1, 1)], (1, 0)),  # SOUTH
@@ -25,6 +34,9 @@ class Elf:
         self.proposal = None
 
     def is_lonely(self, plan):
+        """
+        Prüfung, ob es Nachbarn gibt
+        """
         count = 0
         for row in range(self.row-1, self.row+2):
             for col in range(self.col-1, self.col+2):
@@ -33,6 +45,9 @@ class Elf:
         return count <= 1
 
     def generate_proposal(self, plan):
+        """
+        Berechnung eines Vorschlags gem. Vorgabe
+        """
         self.proposal = None
         if not self.is_lonely(plan):
             for direction in range(4):
@@ -45,8 +60,15 @@ class Elf:
                     break
         return self.proposal
 
-class Plan:
 
+class Plan:
+    """
+    Repräsentation der gesamten Karte
+    Attribute:
+    positions       -> Dictionary mit einer Position als Key und einem Elf-Objekt als Value
+    proposals       -> Dictionary mit einer Position als Key und der Häufigkeit (int) als Value
+    first_direction -> Offset für das Richtungsarray, wird bei jeder Runde aktualisiert
+    """
     elves_count = 0
 
     def __init__(self):
@@ -88,18 +110,21 @@ class Plan:
                 count += 1
         return count
 
-    def empty_tiles(self):
+
+    def map_extensions(self):
         min_row = min(map(lambda tup: tup[0], self.positions))
         max_row = max(map(lambda tup: tup[0], self.positions))
         min_col = min(map(lambda tup: tup[1], self.positions))
         max_col = max(map(lambda tup: tup[1], self.positions))
+        return min_row, max_row, min_col, max_col
+
+
+    def empty_tiles(self):
+        min_row, max_row, min_col, max_col = self.map_extensions()
         return (max_row-min_row+1) * (max_col-min_col+1) - self.elves_count
 
     def print_plan(self):
-        min_row = min(map(lambda tup: tup[0], self.positions))
-        max_row = max(map(lambda tup: tup[0], self.positions))
-        min_col = min(map(lambda tup: tup[1], self.positions))
-        max_col = max(map(lambda tup: tup[1], self.positions))
+        min_row, max_row, min_col, max_col = self.map_extensions()
         print()
         for row in range(min_row-1, max_row+1):
             line = ""
@@ -108,10 +133,10 @@ class Plan:
             print(line)
 
 
-
-
 def solve01(lines: List[str]) -> int:
     """
+    Berechnung der freien Felder im Rechteck, das durch die Elfen nach 10
+    Runden aufgespannt wird
     """
     plan = convert(lines)
     for _ in range(10):
@@ -121,6 +146,7 @@ def solve01(lines: List[str]) -> int:
 
 def solve02(lines: List[str]) -> int:
     """
+    Ermitteln der ersten Runde ohne Bewegung
     """
     count = 0
     plan = convert(lines)

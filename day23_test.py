@@ -40,7 +40,7 @@ def test_proposal():
 def test_move():
     lines = small_data()
     plan = convert(lines)
-    proposals = plan.generate_proposals()
+    plan.generate_proposals()
     count = plan.move_elves()
     assert count == 3
 

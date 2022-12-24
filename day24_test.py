@@ -20,6 +20,7 @@ def test_convert():
     assert maze.size == (1, 1, 4, 6)
     assert len(maze.blizzards) == 19
 
+
 def test_blizzard_movement():
     lines = data()
     maze = convert(lines)
@@ -42,17 +43,24 @@ def test_blizzard_movement():
     assert blizzard.position(2) == (1, 2)
 
 
+def test_next_positions():
+    lines = data()
+    maze = convert(lines)
+    positions = maze.possible_next_pos(maze.entry, 0)
+    assert positions == set([(0, 1), (1, 1)])
+    positions = maze.possible_next_pos((1, 1), 1)
+    assert positions == set([(0, 1), (1, 1), (2, 1)])
 
 
 def test_solve1():
     lines: List[str] = data()
     result: int = solve01(lines)
-    assert result == 0
+    assert result == 18
 
 
 def test_solve2():
     lines: List[str] = data()
     result: int = solve02(lines)
-    assert result == 0
+    assert result == 54
 
 

@@ -109,6 +109,7 @@ class Maze:
 
 def solve01(lines: List[str]) -> int:
     """
+    Suche des kürzesten Weges vom Eingang zum Ausgang
     """
     maze = convert(lines)
     return find_way(maze, maze.entry, maze.exit, 0)
@@ -153,6 +154,9 @@ def best_in_queue(maze, queue, goal):
 
 def solve02(lines: List[str]) -> int:
     """
+    Suche des kürzesten Weges vom Eingang zum Ausgang,
+    anschließend vom Ausgang zum Eingang
+    und wieder zurück zum Ausgang
     """
     maze = convert(lines)
     duration = find_way(maze, maze.entry, maze.exit, 0)
@@ -166,17 +170,22 @@ def solve02(lines: List[str]) -> int:
 
 def convert(lines):
     """
+    Umwandeln des Inputs in ein Spielfeld
     """
     return Maze(list(map(lambda l: l.strip(), lines)))
 
 
 def lcm(a, b):
+    """
+    KGV zweier Zahlen
+    """
     def gcd(a, b):
         if b == 0:
             return a
         return gcd(b, a % b)
 
     return a * b // gcd(a, b)
+
 
 if __name__ == '__main__':
     lines = read_puzzle("data/day24.txt")

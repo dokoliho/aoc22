@@ -122,7 +122,7 @@ def find_way(maze, start, goal, start_minute):
     explored = set()
     already_explored = 0
     already_queued = 0
-    queue = set([(start, start_minute)])
+    queue = {(start, start_minute)}
     while queue:
         situation = best_in_queue(maze, queue, goal)
         player, minute = situation

@@ -78,25 +78,15 @@ def add_snafu_pos(p1, p2, carry):
     w1 = alphabet.index(p1)-2
     w2 = alphabet.index(p2)-2
     sum = w1+w2+carry
-    if -2 <= sum <= 2:
-        return alphabet[sum+2], 0
-    if sum == -3:
-        return "2", -1
-    if sum == -4:
-        return "1", -1
-    if sum == -5:
-        return "0", -1
-    if sum == 3:
-        return "=", 1
-    if sum == 4:
-        return "-", 1
-    if sum == 5:
-        return "0", 1
+    carry = 0
+    if sum < -2:
+        carry = -1
+    if sum > 2:
+        carry = 1
+    return alphabet[(sum+2) % len(alphabet)], carry
 
 
 if __name__ == '__main__':
     lines = read_puzzle("data/day25.txt")
-    side2 = pfc()
-    print(solve01(lines), pfc() - side2)
-    side2 = pfc()
-    print(solve02(lines), pfc() - side2)
+    start = pfc()
+    print(solve01(lines), pfc() - start)

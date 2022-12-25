@@ -177,7 +177,7 @@ def convert(lines) -> Plan:
 
 if __name__ == '__main__':
     lines = read_puzzle("data/day23.txt")
-    side2 = pfc()
-    print(solve01(lines), pfc() - side2)
-    side2 = pfc()
-    print(solve02(lines), pfc() - side2)
+    start = pfc()
+    print(solve01(lines), pfc() - start)
+    start = pfc()
+    print(solve02(lines), pfc() - start)

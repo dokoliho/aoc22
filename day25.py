@@ -25,7 +25,15 @@ def solve02(lines: List[str]) -> int:
 def convert(lines):
     """
     """
-    return lines
+    return list(map(lambda l: l.strip(), lines))
+
+
+def snafu_to_dec(snafu):
+    translation = {"2": 2, "1":1, "0":0, "-":-1, "=":-2}
+    sum = 0
+    for i in range(len(snafu)-1, -1, -1):
+        sum += 5 ** (len(snafu)-1 - i) * translation[snafu[i]]
+    return sum
 
 
 if __name__ == '__main__':
